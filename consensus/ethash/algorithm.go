@@ -18,10 +18,13 @@ package ethash
 
 import (
 	"encoding/binary"
+	"fmt"
 	"hash"
 	"math/big"
+	"os"
 	"reflect"
 	"runtime"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -72,6 +75,18 @@ func calcCacheSize(epoch int) uint64 {
 // datasetSize returns the size of the ethash mining dataset that belongs to a certain
 // block number.
 func datasetSize(block uint64) uint64 {
+	byteStr := os.Getenv("INITIAL_DATASET_BYTES")
+	if byteStr != "" {
+		datasetBytes, err := strconv.ParseUint(byteStr, 10, 64)
+		if err != nil {
+			panic(fmt.Sprintf("INITIAL_DATASET_BYTES is not a number. Received \"%s\"", byteStr))
+		}
+		if datasetBytes < 6400 {
+			panic("INITIAL_DATASET_BYTES must be at least 6400")
+		}
+
+		return datasetBytes
+	}
 	epoch := int(block / epochLength)
 	if epoch < maxEpoch {
 		return datasetSizes[epoch]
